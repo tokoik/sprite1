@@ -1,27 +1,33 @@
-#include <iostream>
-#include <fstream>
+﻿/* OpenGL */
+#if defined(__APPLE__)
+#  define GL_SILENCE_DEPRECATION
+#  include <GLUT/glut.h>
+#  include <OpenGL/glext.h>
+#else
+#  if defined(_MSC_VER)
+//#    pragma comment(linker, "/subsystem:\"windows\" /entry:\"mainCRTStartup\"")
+#    define _USE_MATH_DEFINES
+#    define _CRT_SECURE_NO_WARNINGS
+#  else
+#    define GL_GLEXT_PROTOTYPES
+#  endif
+#  include <GL/glut.h>
+#  include <GL/glext.h>
+PFNGLPOINTPARAMETERFVPROC glPointParameterfv;
+#endif
 
+/* 標準ライブラリ */
 #include <stdlib.h>
 #include <math.h>
-
-#if defined(WIN32)
-//#  pragma comment(linker, "/subsystem:\"windows\" /entry:\"mainCRTStartup\"")
-#  include "glut.h"
-#  include "glext.h"
-PFNGLPOINTPARAMETERFVPROC glPointParameterfv;
-#elif defined(__APPLE__) || defined(MACOSX)
-#  include <GLUT/glut.h>
-#else
-#  define GL_GLEXT_PROTOTYPES
-#  include <GL/glut.h>
-#endif
+#include <iostream>
+#include <fstream>
 
 /*
 ** 光源
 */
-static const GLfloat lightpos[] = { 0.0, 0.0, 1.0, 0.0 }; /* 位置　　　 */
-static const GLfloat lightcol[] = { 1.0, 1.0, 1.0, 1.0 }; /* 直接光強度 */
-static const GLfloat lightamb[] = { 0.1, 0.1, 0.1, 1.0 }; /* 環境光強度 */
+static const GLfloat lightpos[] = { 0.0f, 0.0f, 1.0f, 0.0f }; /* 位置　　　 */
+static const GLfloat lightcol[] = { 1.0f, 1.0f, 1.0f, 1.0f }; /* 直接光強度 */
+static const GLfloat lightamb[] = { 0.1f, 0.1f, 0.1f, 1.0f }; /* 環境光強度 */
 
 /*
 ** パーティクル
@@ -95,7 +101,7 @@ static void init(void)
   glPointParameterfv(GL_POINT_DISTANCE_ATTENUATION, distance);
 
   /* 初期設定 */
-  glClearColor(0.3, 0.3, 1.0, 0.0);
+  glClearColor(0.3f, 0.3f, 1.0f, 0.0f);
   glEnable(GL_DEPTH_TEST);
   glDisable(GL_CULL_FACE);
 
@@ -132,7 +138,7 @@ static void scene(void)
   glPointSize(psize);
   glBegin(GL_POINTS);
   for (std::deque<particle>::iterator ip = particles.begin();
-       ip != particles.end(); ++ip) {
+    ip != particles.end(); ++ip) {
     glVertex3dv(ip->getPosition());
     ip->update();
   }
@@ -183,7 +189,7 @@ static void display(void)
 static void resize(int w, int h)
 {
   /* 点の大きさを設定する */
-  psize = w * 0.1;
+  psize = w * 0.1f;
 
   /* トラックボールする範囲 */
   trackballRegion(w, h);

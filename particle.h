@@ -1,4 +1,4 @@
-#ifndef PARTICLE_H
+﻿#ifndef PARTICLE_H
 #define PARTICLE_H
 
 class particle {
