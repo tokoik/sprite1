@@ -22,6 +22,9 @@ PFNGLPOINTPARAMETERFVPROC glPointParameterfv;
 #include <iostream>
 #include <fstream>
 
+/* トラックボール処理 */
+#include "trackball.h"
+
 /*
 ** 光源
 */
@@ -37,7 +40,7 @@ static const GLfloat lightamb[] = { 0.1f, 0.1f, 0.1f, 1.0f }; /* 環境光強度
 #define MAX_PARTICLES 800
 static std::deque<particle> particles;
 static GLfloat psize;
-static GLfloat distance[] = { 0.0, 0.0, 1.0 };
+static GLfloat distance[] = { 0.0f, 1.0f, 0.0f };
 
 /*
 ** 地面の高さ
@@ -54,13 +57,8 @@ static const char texture[] = "ball.raw";  /* テクスチャファイル名 */
 /*
 ** 初期化
 */
-static void init(void)
+static void init()
 {
-#if defined(WIN32)
-  glPointParameterfv =
-    (PFNGLPOINTPARAMETERFVPROC)wglGetProcAddress("glPointParameterfv");
-#endif
-
   /* テクスチャの読み込みに使う配列 */
   GLubyte image[TEXHEIGHT][TEXWIDTH][4];
   
@@ -74,7 +72,7 @@ static void init(void)
     std::cerr << texture << " が開けません" << std::endl;
   }
   
-  /* テクスチャ画像はバイト単位に詰め込まれている */
+  /* テクスチャ画像はワード単位に詰め込まれている */
   glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
   
   /* テクスチャを拡大・縮小する方法の指定 */
@@ -85,7 +83,7 @@ static void init(void)
   /* テクスチャの繰り返し方法の指定 */
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-  
+
   /* テクスチャ環境 */
   glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
   glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
@@ -93,12 +91,6 @@ static void init(void)
   /* テクスチャの割り当て */
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEXWIDTH, TEXHEIGHT, 0,
                GL_RGBA, GL_UNSIGNED_BYTE, image);
-
-  /* アルファテストの判別関数 */
-  glAlphaFunc(GL_GREATER, 0.5);
-
-  /* 距離に対する点の大きさの制御 */
-  glPointParameterfv(GL_POINT_DISTANCE_ATTENUATION, distance);
 
   /* 初期設定 */
   glClearColor(0.3f, 0.3f, 1.0f, 0.0f);
@@ -108,6 +100,17 @@ static void init(void)
   /* 陰影付けを無効にする */
   glDisable(GL_LIGHTING);
 
+  /* アルファテストの判別関数 */
+  glAlphaFunc(GL_GREATER, 0.5);
+
+#if defined(WIN32)
+  glPointParameterfv =
+    (PFNGLPOINTPARAMETERFVPROC)wglGetProcAddress("glPointParameterfv");
+#endif
+
+  /* 距離に対する点の大きさの制御 */
+  glPointParameterfv(GL_POINT_DISTANCE_ATTENUATION, distance);
+  
   /* 地面の高さ */
   particle::height(HEIGHT);
 }
@@ -115,7 +118,7 @@ static void init(void)
 /*
 ** シーンの描画
 */
-static void scene(void)
+static void scene()
 {
   /* パーティクルを生成する */
   if (particles.size() >= MAX_PARTICLES) {
@@ -138,7 +141,7 @@ static void scene(void)
   glPointSize(psize);
   glBegin(GL_POINTS);
   for (std::deque<particle>::iterator ip = particles.begin();
-    ip != particles.end(); ++ip) {
+       ip != particles.end(); ++ip) {
     glVertex3dv(ip->getPosition());
     ip->update();
   }
@@ -154,12 +157,9 @@ static void scene(void)
   glDisable(GL_TEXTURE_2D);
 }
 
-
 /****************************
 ** GLUT のコールバック関数 **
 ****************************/
-
-#include "trackball.h" /* トラックボール処理用関数の宣言 */
 
 static void display(void)
 {
