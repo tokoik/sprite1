@@ -2,9 +2,9 @@
 
 ## 1. 概要
 
-このプログラムは、OpenGL における「Point Sprite」機能を用いて点にテクスチャをマッピングし、球のパーティクルを描画する学生向けのサンプルプログラムです。本プログラムは、以下のブログ記事の解説に沿って学習を進めるための雛形として提供されています。
+このプログラムは、OpenGL における「Point Sprite」機能を用いて点にテクスチャをマッピングし、球のパーティクルを描画する学生向けのサンプルプログラムです。本プログラムは、以下のブログ記事の解説に沿って作成したものです。
 
-- [Point Sprite を使ってみる](https://tokoik.github.io/blog/opengl/2006/02/27/texture.html)
+- [Point Sprite を使ってみる](https://tokoik.github.io/blog/%E8%B3%87%E6%96%99/2006/02/27/texture.html)
 
 このプログラムでは、`GL_POINT_SPRITE` を有効化して点（正方形）に球のテクスチャ (`ball.raw`) をマッピングし、アルファテストによる輪郭の抜き処理、および `glPointParameterfv(GL_POINT_DISTANCE_ATTENUATION, ...)` を用いた距離に応じた点の大きさの減衰計算（遠近感の付与）を実装しています。
 
@@ -69,24 +69,63 @@
 
 ## 4. 解説
 
-### 4.1 Point Sprite の有効化とテクスチャ環境
+このプログラムは、[sprite0](https://github.com/tokoik/sprite0) の点によるパーティクル描画に、テクスチャマッピングと Point Sprite を追加したものです。
+
+### 4.1 テクスチャの読み込みとテクスチャ環境 (`init()` 関数)
+
+64 × 64 画素の RGBA の生画像 `ball.raw` を `std::ifstream` で読み込み、テクスチャに割り当てます。下地の色の影響を受けないよう、テクスチャ環境のモードには `GL_REPLACE` を指定します。また、`GL_GENERATE_MIPMAP` を `GL_TRUE` にしてミップマップを自動生成し、縮小フィルタに `GL_LINEAR_MIPMAP_LINEAR` を指定しています。
 
 ```cpp
-glEnable(GL_POINT_SPRITE);
+/* テクスチャ環境 */
+glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
 ```
 
-点を描画する際に各フラグメントのテクスチャ座標を自動生成（0.0〜1.0）させ、点全体にテクスチャ画像をマッピングします。
+`glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE)` により、点を描画する際に各フラグメントのテクスチャ座標を 0.0〜1.0 の範囲で自動生成させ、点全体にテクスチャ画像がマッピングされるようにします。
 
 ### 4.2 アルファテストによる輪郭の抜き処理
 
-テクスチャ画像の背景（アルファ値 0）を描画しないように、アルファテストを有効化します。
+テクスチャ画像には球の形に切り抜くためのアルファ値が設定されているので、その透明部分を描画しないようにアルファテストを使います。判別関数は `init()` で設定し、描画時に有効にします。
 
 ```cpp
-glEnable(GL_ALPHA_TEST);
+/* アルファテストの判別関数 */
 glAlphaFunc(GL_GREATER, 0.5);
 ```
 
-### 4.3 距離減衰による点の大きさの制御
+### 4.3 描画時の設定 (`scene()` 関数)
 
-`glPointParameterfv(GL_POINT_DISTANCE_ATTENUATION, distance)` により、視点からの距離 $d$ に反比例して点の描画サイズをスケーリングします。
+パーティクルを描く前にテクスチャマッピング・Point Sprite・アルファテストを有効にし、描き終わったら無効に戻します。点の大きさは `glPointSize()` で指定します。
+
+```cpp
+/* テクスチャマッピング開始 */
+glEnable(GL_TEXTURE_2D);
+
+/* Point Sprite を有効にする */
+glEnable(GL_POINT_SPRITE);
+
+/* アルファテストを有効にする */
+glEnable(GL_ALPHA_TEST);
+
+/* パーティクルを描く */
+glColor3d(1.0, 1.0, 1.0);
+glPointSize(psize);
+glBegin(GL_POINTS);
+...
+```
+
+### 4.4 点の大きさの制御
+
+- **ウィンドウの大きさに合わせる**: `resize()` で、点の大きさを保持する変数 `psize` をウィンドウの幅に比例させます（`psize = w * 0.1f`）。
+- **視点からの距離に応じて変える**: `glPointParameterfv(GL_POINT_DISTANCE_ATTENUATION, distance)` により、実際に描かれる点の大きさが
+
+  $$pointSize=\mathrm{clampSize}\left(size * \sqrt{\frac{1}{a + b * d + c * d^2}}\right)$$
+
+  となるようにします。配列 `distance` の要素が $a$, $b$, $c$ に相当するので、`{ 0.0f, 0.0f, 1.0f }` を指定すれば、点の大きさが視点からの距離 $d$ に反比例するようになります。
+- なお `glPointParameterfv()` は OpenGL 1.4 以降の機能なので、Windows では `wglGetProcAddress()` で関数のエントリポイントを取得しています。
+
+  ```cpp
+  #if defined(WIN32)
+    glPointParameterfv =
+      (PFNGLPOINTPARAMETERFVPROC)wglGetProcAddress("glPointParameterfv");
+  #endif
+  ```
