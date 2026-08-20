@@ -40,7 +40,7 @@ static const GLfloat lightamb[] = { 0.1f, 0.1f, 0.1f, 1.0f }; /* 環境光強度
 #define MAX_PARTICLES 800
 static std::deque<particle> particles;
 static GLfloat psize;
-static GLfloat distance[] = { 0.0f, 1.0f, 0.0f };
+static GLfloat distance[] = { 0.0f, 0.0f, 1.0f };
 
 /*
 ** 地面の高さ
