@@ -4,7 +4,7 @@
 
 このプログラムは、OpenGL における「Point Sprite」機能を用いて点にテクスチャをマッピングし、球のパーティクルを描画する学生向けのサンプルプログラムです。本プログラムは、以下のブログ記事の解説に沿って作成したものです。
 
-- [Point Sprite を使ってみる](https://tokoik.github.io/blog/%E8%B3%87%E6%96%99/2006/02/27/texture.html)
+- [Point Sprite を使ってみる](https://tokoik.github.io/blog/2006-02-27.html)
 
 このプログラムでは、`GL_POINT_SPRITE` を有効化して点（正方形）に球のテクスチャ (`ball.raw`) をマッピングし、アルファテストによる輪郭の抜き処理、および `glPointParameterfv(GL_POINT_DISTANCE_ATTENUATION, ...)` を用いた距離に応じた点の大きさの減衰計算（遠近感の付与）を実装しています。
 
